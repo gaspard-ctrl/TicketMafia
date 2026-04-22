@@ -8,6 +8,7 @@ import { PhotoGallery } from "@/components/PhotoGallery";
 import { TicketEditor } from "@/components/TicketEditor";
 import { TitleEditor } from "@/components/TitleEditor";
 import { SlackText } from "@/lib/slack/mrkdwn";
+import { slackToPlainText } from "@/lib/slack/text";
 import { deleteComment } from "./actions";
 
 function formatDateTime(iso: string): string {
@@ -226,7 +227,7 @@ export default async function TicketDetailPage({
           <div className="flex justify-end">
             <DeleteTicketButton
               ticketId={ticket.id}
-              ticketTitle={ticket.title}
+              ticketTitle={slackToPlainText(ticket.title)}
               variant="detail"
             />
           </div>

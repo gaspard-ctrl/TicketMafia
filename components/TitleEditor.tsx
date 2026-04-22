@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { updateTicket } from "@/app/tickets/[id]/actions";
+import { slackToPlainText } from "@/lib/slack/text";
 
 type Props = {
   ticketId: string;
@@ -9,14 +10,19 @@ type Props = {
 };
 
 export function TitleEditor({ ticketId, title }: Props) {
+  // Existing tickets may have a raw Slack-flavored title in DB
+  // (e.g. "Hi <@U123|Lasitha>"). Display the cleaned version, and treat it
+  // as the editable text so saving normalizes it.
+  const display = useMemo(() => slackToPlainText(title), [title]);
+
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(title);
+  const [draft, setDraft] = useState(display);
   const [pending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setDraft(title);
-  }, [title]);
+    setDraft(display);
+  }, [display]);
 
   useEffect(() => {
     if (editing && textareaRef.current) {
@@ -30,8 +36,8 @@ export function TitleEditor({ ticketId, title }: Props) {
 
   function save() {
     const next = draft.trim();
-    if (next.length === 0 || next === title) {
-      setDraft(title);
+    if (next.length === 0 || next === display) {
+      setDraft(display);
       setEditing(false);
       return;
     }
@@ -45,7 +51,7 @@ export function TitleEditor({ ticketId, title }: Props) {
   }
 
   function cancel() {
-    setDraft(title);
+    setDraft(display);
     setEditing(false);
   }
 
@@ -53,7 +59,7 @@ export function TitleEditor({ ticketId, title }: Props) {
     return (
       <div className="group mb-4 flex items-start gap-2">
         <h1 className="flex-1 text-2xl font-semibold leading-tight text-slate-900">
-          {title}
+          {display}
         </h1>
         <button
           type="button"

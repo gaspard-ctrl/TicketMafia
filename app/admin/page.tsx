@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getAdminDashboard } from "@/lib/db/queries";
 import { CategoryBadge, STATUS_LABEL, STATUS_ORDER, StatusBadge } from "@/components/badges";
 import { OwnerBars, StatusDonut, WeeklyBars } from "@/components/AdminCharts";
+import { slackToPlainText } from "@/lib/slack/text";
 import type { TicketCategory, TicketStatus } from "@/lib/slack/types";
 
 export const dynamic = "force-dynamic";
@@ -199,7 +200,7 @@ export default async function AdminPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-slate-900 group-hover:text-slate-700">
-                          {t.title}
+                          {slackToPlainText(t.title)}
                         </p>
                         <p className="text-xs text-slate-500">
                           {t.owner ? (
@@ -244,7 +245,7 @@ export default async function AdminPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-slate-900 group-hover:text-slate-700">
-                          {t.title}
+                          {slackToPlainText(t.title)}
                         </p>
                         <p className="text-xs text-slate-500">
                           {t.owner ? (

@@ -6,6 +6,7 @@ import { moveTicket } from "@/app/actions";
 import { CategoryBadge, STATUS_LABEL, STATUS_ORDER, StatusBadge } from "@/components/badges";
 import { DeleteTicketButton } from "@/components/DeleteTicketButton";
 import type { TicketRow } from "@/lib/db/queries";
+import { slackToPlainText } from "@/lib/slack/text";
 import type { TicketStatus } from "@/lib/slack/types";
 
 function formatDeadline(deadline: string | null): string | null {
@@ -104,7 +105,7 @@ export function KanbanBoard({ tickets }: { tickets: TicketRow[] }) {
                     >
                       <div className="mb-2 flex items-start justify-between gap-2 pr-6">
                         <p className="text-sm font-medium leading-snug text-slate-900">
-                          {t.title}
+                          {slackToPlainText(t.title)}
                         </p>
                         <CategoryBadge category={t.category} />
                       </div>
@@ -116,7 +117,7 @@ export function KanbanBoard({ tickets }: { tickets: TicketRow[] }) {
                         </div>
                       </div>
                     </Link>
-                    <DeleteTicketButton ticketId={t.id} ticketTitle={t.title} />
+                    <DeleteTicketButton ticketId={t.id} ticketTitle={slackToPlainText(t.title)} />
                   </div>
                 );
               })

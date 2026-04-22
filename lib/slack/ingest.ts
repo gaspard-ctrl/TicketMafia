@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { getChannelName, getPermalink, getUserInfo, resolveMentions } from "./api";
+import { slackToPlainText } from "./text";
 import {
   STATUS_EMOJIS,
   categoryForChannel,
@@ -20,7 +21,8 @@ const IGNORED_SUBTYPES = new Set([
 ]);
 
 function makeTitle(text: string): string {
-  const firstLine = text.split("\n")[0]?.trim() ?? "";
+  const cleaned = slackToPlainText(text);
+  const firstLine = cleaned.split("\n")[0]?.trim() ?? "";
   if (firstLine.length === 0) return "(sans titre)";
   return firstLine.length > 120 ? firstLine.slice(0, 117) + "…" : firstLine;
 }

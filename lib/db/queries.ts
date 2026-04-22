@@ -51,7 +51,9 @@ export async function listTickets(opts: {
     query = query.eq("category", opts.category);
   }
 
+  const t0 = Date.now();
   const { data, error } = await query;
+  console.log(`[perf] listTickets supabase=${Date.now() - t0}ms`);
   if (error) {
     console.error("listTickets failed", error);
     return [];
@@ -66,6 +68,7 @@ export async function getTicket(id: string): Promise<{
 }> {
   const supabase = createServiceClient();
 
+  const t0 = Date.now();
   const [ticketRes, attRes, commentsRes] = await Promise.all([
     supabase.from("tickets").select("*").eq("id", id).maybeSingle(),
     supabase
@@ -79,6 +82,7 @@ export async function getTicket(id: string): Promise<{
       .eq("ticket_id", id)
       .order("created_at", { ascending: true }),
   ]);
+  console.log(`[perf] getTicket supabase=${Date.now() - t0}ms`);
 
   return {
     ticket: (ticketRes.data ?? null) as TicketRow | null,

@@ -86,6 +86,12 @@ export default async function HomePage({
             ))}
           </nav>
           <Link
+            href="/tickets/new"
+            className="rounded bg-slate-900 px-3 py-1 text-sm font-medium text-white hover:bg-slate-800"
+          >
+            + Nouveau ticket
+          </Link>
+          <Link
             href="/admin"
             className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
           >

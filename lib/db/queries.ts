@@ -3,9 +3,10 @@ import type { TicketCategory, TicketStatus } from "@/lib/slack/types";
 
 export type TicketRow = {
   id: string;
-  slack_channel_id: string;
+  // slack_channel_id/slack_ts are null for tickets created inside the app
+  slack_channel_id: string | null;
   slack_channel_name: string | null;
-  slack_ts: string;
+  slack_ts: string | null;
   category: TicketCategory;
   title: string;
   body: string;

@@ -47,23 +47,32 @@ export type CommentRow = {
 export async function listTickets(opts: {
   category?: TicketCategory | "all";
   range?: DashboardRange;
+  sort?: "desc" | "asc";
+  from?: string; // ISO date YYYY-MM-DD
+  to?: string;   // ISO date YYYY-MM-DD
 } = {}): Promise<TicketRow[]> {
   const supabase = createServiceClient();
   let query = supabase
     .from("tickets")
     .select("*")
     .is("archived_at", null)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: opts.sort === "asc" });
 
   if (opts.category && opts.category !== "all") {
     query = query.eq("category", opts.category);
   }
 
-  const days = opts.range ? RANGE_DAYS[opts.range] : null;
-  if (days !== null) {
-    const since = new Date();
-    since.setUTCDate(since.getUTCDate() - days);
-    query = query.gte("created_at", since.toISOString());
+  // Custom date range overrides the preset range filter.
+  if (opts.from || opts.to) {
+    if (opts.from) query = query.gte("created_at", opts.from);
+    if (opts.to) query = query.lte("created_at", `${opts.to}T23:59:59.999Z`);
+  } else {
+    const days = opts.range ? RANGE_DAYS[opts.range] : null;
+    if (days !== null) {
+      const since = new Date();
+      since.setUTCDate(since.getUTCDate() - days);
+      query = query.gte("created_at", since.toISOString());
+    }
   }
 
   const t0 = Date.now();

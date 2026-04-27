@@ -16,6 +16,17 @@ function formatDeadline(deadline: string | null): string | null {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
+function formatRelative(iso: string): string {
+  const days = Math.floor((Date.now() - Date.parse(iso)) / 86_400_000);
+  if (days <= 0) return "aujourd'hui";
+  if (days === 1) return "hier";
+  if (days < 7) return `il y a ${days}j`;
+  if (days < 30) return `il y a ${Math.floor(days / 7)}sem`;
+  if (days < 365) return `il y a ${Math.floor(days / 30)} mois`;
+  const years = Math.floor(days / 365);
+  return `il y a ${years} an${years > 1 ? "s" : ""}`;
+}
+
 type Move = { id: string; status: TicketStatus };
 
 export function KanbanBoard({ tickets }: { tickets: TicketRow[] }) {
@@ -113,6 +124,9 @@ export function KanbanBoard({ tickets }: { tickets: TicketRow[] }) {
                       <div className="flex items-center justify-between text-xs text-slate-500">
                         <span className="truncate">{t.author_name ?? "—"}</span>
                         <div className="flex items-center gap-2">
+                          <span title={new Date(t.created_at).toLocaleString("fr-FR")}>
+                            🕐 {formatRelative(t.created_at)}
+                          </span>
                           {t.owner && <span className="capitalize">👤 {t.owner}</span>}
                           {deadline && <span>📅 {deadline}</span>}
                         </div>

@@ -36,8 +36,18 @@ export default async function TicketDetailPage({
   if (!ticket) notFound();
 
   const isImage = (mime: string | null) => mime?.startsWith("image/") ?? false;
-  const imageAttachments = attachments.filter((a) => isImage(a.mimetype));
-  const fileAttachments = attachments.filter((a) => !isImage(a.mimetype));
+  // Top-level (ticket message) attachments — comment_id is null.
+  const ticketAttachments = attachments.filter((a) => a.comment_id === null);
+  const imageAttachments = ticketAttachments.filter((a) => isImage(a.mimetype));
+  const fileAttachments = ticketAttachments.filter((a) => !isImage(a.mimetype));
+  // Per-comment attachments — group by comment_id for fast lookup.
+  const commentAttachments = new Map<string, typeof attachments>();
+  for (const a of attachments) {
+    if (!a.comment_id) continue;
+    const list = commentAttachments.get(a.comment_id) ?? [];
+    list.push(a);
+    commentAttachments.set(a.comment_id, list);
+  }
   const slackComments = comments.filter((c) => c.source === "slack");
   const appComments = comments.filter((c) => c.source === "app");
 
@@ -129,20 +139,53 @@ export default async function TicketDetailPage({
               </p>
             ) : (
               <div className="flex flex-col gap-3">
-                {slackComments.map((c) => (
-                  <div
-                    key={c.id}
-                    className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-                  >
-                    <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
-                      <span className="font-medium text-slate-700">{c.author_name ?? "—"}</span>
-                      <span>{formatDateTime(c.created_at)}</span>
+                {slackComments.map((c) => {
+                  const atts = commentAttachments.get(c.id) ?? [];
+                  const images = atts.filter((a) => isImage(a.mimetype));
+                  const files = atts.filter((a) => !isImage(a.mimetype));
+                  return (
+                    <div
+                      key={c.id}
+                      className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                    >
+                      <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+                        <span className="font-medium text-slate-700">{c.author_name ?? "—"}</span>
+                        <span>{formatDateTime(c.created_at)}</span>
+                      </div>
+                      {c.body && (
+                        <div className="text-sm text-slate-800">
+                          <SlackText text={c.body} />
+                        </div>
+                      )}
+                      {images.length > 0 && (
+                        <div className="mt-3">
+                          <PhotoGallery
+                            images={images.map((att) => ({
+                              id: att.id,
+                              src: `/api/files/${att.id}`,
+                              alt: att.name ?? "image",
+                            }))}
+                          />
+                        </div>
+                      )}
+                      {files.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {files.map((att) => (
+                            <a
+                              key={att.id}
+                              href={`/api/files/${att.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100"
+                            >
+                              📎 {att.name ?? "Fichier"}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm text-slate-800">
-                      <SlackText text={c.body} />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>

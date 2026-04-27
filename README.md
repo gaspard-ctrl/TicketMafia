@@ -55,6 +55,9 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 APP_PASSWORD=Coachello123
 
+# Génération automatique des titres de tickets (Claude Haiku)
+ANTHROPIC_API_KEY=
+
 SLACK_SIGNING_SECRET=
 SLACK_BOT_TOKEN=
 SLACK_CHANNEL_BUGS_ID=

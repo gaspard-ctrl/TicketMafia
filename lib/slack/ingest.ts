@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { generateTitle } from "@/lib/ai/title";
 import { getChannelName, getPermalink, getUserInfo, resolveMentions } from "./api";
 import { slackToPlainText } from "./text";
 import {
@@ -104,6 +106,22 @@ async function ingestTopLevelMessage(
 
     if (attErr) console.error("ingest attachments failed", attErr);
   }
+
+  // Run Claude title generation after the Slack response is sent so we
+  // never burn into the 3s acknowledgement window.
+  if (ticket) {
+    const ticketId = ticket.id;
+    after(async () => {
+      const aiTitle = await generateTitle(text);
+      if (!aiTitle) return;
+      const sb = createServiceClient();
+      const { error: updErr } = await sb
+        .from("tickets")
+        .update({ title: aiTitle, title_ai_generated_at: new Date().toISOString() })
+        .eq("id", ticketId);
+      if (updErr) console.error("ai title update failed", updErr);
+    });
+  }
 }
 
 async function ingestThreadReply(event: SlackMessageEvent): Promise<void> {
@@ -126,20 +144,46 @@ async function ingestThreadReply(event: SlackMessageEvent): Promise<void> {
     resolveMentions(event.text ?? ""),
   ]);
 
-  const { error } = await supabase.from("ticket_comments").upsert(
-    {
-      ticket_id: parent.id,
-      source: "slack",
-      slack_ts: event.ts,
-      slack_user_id: event.user ?? null,
-      author_name: author?.name ?? null,
-      author_avatar: author?.avatar ?? null,
-      body,
-    },
-    { onConflict: "ticket_id,slack_ts", ignoreDuplicates: true }
-  );
+  // Upsert with ignoreDuplicates: false so we always get the row id back
+  // (needed to link any attached files). Re-ingestion just no-ops on body.
+  const { data: comment, error } = await supabase
+    .from("ticket_comments")
+    .upsert(
+      {
+        ticket_id: parent.id,
+        source: "slack",
+        slack_ts: event.ts,
+        slack_user_id: event.user ?? null,
+        author_name: author?.name ?? null,
+        author_avatar: author?.avatar ?? null,
+        body,
+      },
+      { onConflict: "ticket_id,slack_ts", ignoreDuplicates: false }
+    )
+    .select("id")
+    .single();
 
-  if (error) console.error("ingest comment failed", error);
+  if (error) {
+    console.error("ingest comment failed", error);
+    return;
+  }
+
+  if (event.files?.length && comment) {
+    const rows = event.files.map((f) => ({
+      ticket_id: parent.id,
+      comment_id: comment.id,
+      slack_file_id: f.id,
+      url: f.url_private ?? f.url_private_download ?? f.permalink ?? "",
+      name: f.name ?? null,
+      mimetype: f.mimetype ?? null,
+    }));
+
+    const { error: attErr } = await supabase
+      .from("ticket_attachments")
+      .upsert(rows, { onConflict: "ticket_id,slack_file_id", ignoreDuplicates: true });
+
+    if (attErr) console.error("ingest comment attachments failed", attErr);
+  }
 }
 
 export async function handleReactionEvent(event: SlackReactionEvent): Promise<void> {

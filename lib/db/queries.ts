@@ -24,6 +24,7 @@ export type TicketRow = {
 export type AttachmentRow = {
   id: string;
   ticket_id: string;
+  comment_id: string | null;
   slack_file_id: string | null;
   url: string;
   name: string | null;

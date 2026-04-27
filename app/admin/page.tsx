@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getAdminDashboard, type DashboardRange } from "@/lib/db/queries";
 import { CategoryBadge, STATUS_LABEL, STATUS_ORDER, StatusBadge } from "@/components/badges";
 import { OwnerBars, StatusDonut, WeeklyBars } from "@/components/AdminCharts";
+import { RenameTitlesButton } from "@/components/RenameTitlesButton";
 import { slackToPlainText } from "@/lib/slack/text";
 import type { TicketCategory, TicketStatus } from "@/lib/slack/types";
 
@@ -170,21 +171,24 @@ export default async function AdminPage({
             Vue d'ensemble des tickets, par owner et sur le temps.
           </p>
         </div>
-        <nav className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
-          {RANGE_FILTERS.map((f) => (
-            <Link
-              key={f.key}
-              href={f.key === "all" ? "/admin" : `/admin?range=${f.key}`}
-              className={`rounded px-3 py-1 text-sm transition ${
-                range === f.key
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              {f.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="flex flex-wrap items-center gap-3">
+          <RenameTitlesButton />
+          <nav className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
+            {RANGE_FILTERS.map((f) => (
+              <Link
+                key={f.key}
+                href={f.key === "all" ? "/admin" : `/admin?range=${f.key}`}
+                className={`rounded px-3 py-1 text-sm transition ${
+                  range === f.key
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                {f.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
